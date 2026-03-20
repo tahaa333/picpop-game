@@ -9,7 +9,7 @@ const app = document.querySelector(".app");
 
 let dpr = window.devicePixelRatio || 1;
 
-// 🎮 Game State (DEFINE FIRST ✅)
+// 🎮 Game State
 let ball = { x: 150, y: 200, r: 20, vx: 0, vy: 0 };
 let paddle = { w: 100, h: 12, x: 100, y: 0 };
 
@@ -21,21 +21,25 @@ let baseSpeed = 3.2;
 let speedMultiplier = 1;
 let canBounce = true;
 
-// ✨ Animations
+// ✨ Effects
 let squash = 1;
 let stretch = 1;
 let popups = [];
 
-// 📱 Responsive Canvas (NOW SAFE ✅)
+// 📱 TRUE CANVAS SIZE FIX (IMPORTANT)
 function resizeCanvas() {
-  const rect = canvas.getBoundingClientRect();
+  const width = canvas.clientWidth;
+  const height = window.innerHeight; // 🔥 use real screen height
 
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
+  canvas.style.height = height + "px";
+
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  paddle.y = rect.height - 40;
+  // ✅ Correct paddle position
+  paddle.y = height - 60;
 }
 
 window.addEventListener("resize", resizeCanvas);
@@ -50,16 +54,14 @@ function playBounce() {
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
 
-  osc.type = "sine";
   osc.frequency.setValueAtTime(650, audioCtx.currentTime);
-
   gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
 
   osc.connect(gain);
   gain.connect(audioCtx.destination);
 
-  osc.start(audioCtx.currentTime);
+  osc.start();
   osc.stop(audioCtx.currentTime + 0.08);
 }
 
@@ -88,16 +90,17 @@ overlay.addEventListener("click", () => {
 });
 
 function startGame() {
-  const rect = canvas.getBoundingClientRect();
+  const width = canvas.width / dpr;
+  const height = canvas.height / dpr;
 
-  ball.x = rect.width / 2;
-  ball.y = rect.height / 2;
+  ball.x = width / 2;
+  ball.y = height / 2;
 
   ball.vx = baseSpeed * (Math.random() > 0.5 ? 1 : -1);
   ball.vy = -baseSpeed;
 
-  paddle.w = rect.width * 0.25;
-  paddle.y = rect.height - 40;
+  paddle.w = width * 0.25;
+  paddle.y = height - 60;
 
   score = 0;
   speedMultiplier = 1;
@@ -170,9 +173,8 @@ function drawPopups() {
 function gameLoop() {
   if (!running) return;
 
-  const rect = canvas.getBoundingClientRect();
-  const maxX = rect.width;
-  const maxY = rect.height;
+  const width = canvas.width / dpr;
+  const height = canvas.height / dpr;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -182,7 +184,8 @@ function gameLoop() {
   squash += (1 - squash) * 0.2;
   stretch += (1 - stretch) * 0.2;
 
-  if (ball.x <= ball.r || ball.x >= maxX - ball.r) {
+  // walls
+  if (ball.x <= ball.r || ball.x >= width - ball.r) {
     ball.vx *= -1;
     playBounce();
   }
@@ -192,6 +195,7 @@ function gameLoop() {
     playBounce();
   }
 
+  // paddle
   if (
     ball.y + ball.r >= paddle.y &&
     ball.y + ball.r <= paddle.y + paddle.h &&
@@ -212,7 +216,8 @@ function gameLoop() {
       squash = 0.7;
       stretch = 1.3;
 
-      app.style.background = colors[Math.floor(Math.random() * colors.length)];
+      app.style.background =
+        colors[Math.floor(Math.random() * colors.length)];
 
       popups.push({ x: ball.x, y: ball.y, alpha: 1 });
 
@@ -223,7 +228,8 @@ function gameLoop() {
     }
   }
 
-  if (ball.y > maxY) {
+  // game over
+  if (ball.y > height) {
     running = false;
     overlay.innerText = "Game Over\nTap to Replay";
     overlay.style.display = "flex";
