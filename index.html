@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PFP Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <div class="top-bar">
+    <span>🎮 PFP Game</span>
+    <span id="score">0</span>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Upload Screen -->
+  <div class="upload-screen" id="uploadScreen">
+    <h2>Play with your photo</h2>
+    <label class="upload-btn">
+      Choose Photo
+      <input type="file" id="upload" accept="image/*">
+    </label>
+  </div>
+
+  <!-- Overlay -->
+  <div class="overlay" id="overlay">Tap to Start</div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
