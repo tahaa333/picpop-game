@@ -17,7 +17,7 @@ let img = new Image();
 let running = false;
 let score = 0;
 
-let baseSpeed = 3.2;
+let baseSpeed = 4.2;
 let canBounce = true;
 
 // ✨ Effects
