@@ -9,42 +9,7 @@ const app = document.querySelector(".app");
 
 let dpr = window.devicePixelRatio || 1;
 
-// 📱 Responsive Canvas
-function resizeCanvas() {
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-
-// 🔊 Sound FIXED
-let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playBounce() {
-  if (audioCtx.state === "suspended") return;
-
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-
-  osc.frequency.setValueAtTime(650, audioCtx.currentTime);
-  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
-
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.08);
-}
-
-// 🎨 Soft aesthetic colors
-const colors = [
-  "#ffe4e6", "#e0f2fe", "#dcfce7",
-  "#fef9c3", "#ede9fe", "#fce7f3"
-];
-
-// 🎮 Game state
+// 🎮 Game State (DEFINE FIRST ✅)
 let ball = { x: 150, y: 200, r: 20, vx: 0, vy: 0 };
 let paddle = { w: 100, h: 12, x: 100, y: 0 };
 
@@ -52,14 +17,57 @@ let img = new Image();
 let running = false;
 let score = 0;
 
-let baseSpeed = 2.5;
+let baseSpeed = 3.2;
 let speedMultiplier = 1;
 let canBounce = true;
 
-// ✨ Animation states
+// ✨ Animations
 let squash = 1;
 let stretch = 1;
 let popups = [];
+
+// 📱 Responsive Canvas (NOW SAFE ✅)
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  paddle.y = rect.height - 40;
+}
+
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+// 🔊 Sound
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playBounce() {
+  if (audioCtx.state === "suspended") return;
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(650, audioCtx.currentTime);
+
+  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.08);
+}
+
+// 🎨 Colors
+const colors = [
+  "#ffe4e6", "#e0f2fe", "#dcfce7",
+  "#fef9c3", "#ede9fe", "#fce7f3"
+];
 
 // 📸 Upload
 upload.addEventListener("change", (e) => {
@@ -80,14 +88,16 @@ overlay.addEventListener("click", () => {
 });
 
 function startGame() {
-  ball.x = canvas.width / (2 * dpr);
-  ball.y = canvas.height / (2 * dpr);
+  const rect = canvas.getBoundingClientRect();
+
+  ball.x = rect.width / 2;
+  ball.y = rect.height / 2;
 
   ball.vx = baseSpeed * (Math.random() > 0.5 ? 1 : -1);
   ball.vy = -baseSpeed;
 
-  paddle.w = canvas.width / (4 * dpr);
-  paddle.y = canvas.height / dpr - 30;
+  paddle.w = rect.width * 0.25;
+  paddle.y = rect.height - 40;
 
   score = 0;
   speedMultiplier = 1;
@@ -97,16 +107,16 @@ function startGame() {
 }
 
 // 🎮 Controls
-function movePaddle(x) {
+function movePaddle(clientX) {
   const rect = canvas.getBoundingClientRect();
-  paddle.x = x - rect.left - paddle.w / 2;
+  paddle.x = clientX - rect.left - paddle.w / 2;
   paddle.x = Math.max(0, Math.min(rect.width - paddle.w, paddle.x));
 }
 
 canvas.addEventListener("mousemove", (e) => movePaddle(e.clientX));
 canvas.addEventListener("touchmove", (e) => movePaddle(e.touches[0].clientX), { passive: true });
 
-// 🎯 Draw Ball with squash/stretch
+// 🎯 Draw Ball
 function drawBall() {
   ctx.save();
   ctx.translate(ball.x, ball.y);
@@ -124,26 +134,23 @@ function drawBall() {
 function drawPaddle() {
   ctx.fillStyle = "#ff758c";
 
-  let radius = 10;
-  let x = paddle.x;
-  let y = paddle.y;
-  let w = paddle.w;
-  let h = paddle.h;
+  let r = 10;
+  let x = paddle.x, y = paddle.y, w = paddle.w, h = paddle.h;
 
   ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + w - radius, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-  ctx.lineTo(x + w, y + h - radius);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-  ctx.lineTo(x + radius, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.fill();
 }
 
-// 💥 Score popups
+// 💥 Popups
 function drawPopups() {
   popups.forEach((p, i) => {
     ctx.globalAlpha = p.alpha;
@@ -163,19 +170,18 @@ function drawPopups() {
 function gameLoop() {
   if (!running) return;
 
+  const rect = canvas.getBoundingClientRect();
+  const maxX = rect.width;
+  const maxY = rect.height;
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   ball.x += ball.vx;
   ball.y += ball.vy;
 
-  const maxX = canvas.width / dpr;
-  const maxY = canvas.height / dpr;
-
-  // Smooth animation reset
   squash += (1 - squash) * 0.2;
   stretch += (1 - stretch) * 0.2;
 
-  // Walls
   if (ball.x <= ball.r || ball.x >= maxX - ball.r) {
     ball.vx *= -1;
     playBounce();
@@ -186,7 +192,6 @@ function gameLoop() {
     playBounce();
   }
 
-  // Paddle hit
   if (
     ball.y + ball.r >= paddle.y &&
     ball.y + ball.r <= paddle.y + paddle.h &&
@@ -204,25 +209,20 @@ function gameLoop() {
 
       playBounce();
 
-      // 💥 squash effect
       squash = 0.7;
       stretch = 1.3;
 
-      // 🎨 background change
       app.style.background = colors[Math.floor(Math.random() * colors.length)];
 
-      // 💥 popup
       popups.push({ x: ball.x, y: ball.y, alpha: 1 });
 
-      // 📈 difficulty
-      speedMultiplier += 0.12;
+      speedMultiplier += 0.08;
 
       canBounce = false;
       setTimeout(() => (canBounce = true), 100);
     }
   }
 
-  // Game Over
   if (ball.y > maxY) {
     running = false;
     overlay.innerText = "Game Over\nTap to Replay";
