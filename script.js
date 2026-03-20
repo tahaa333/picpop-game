@@ -17,8 +17,7 @@ let img = new Image();
 let running = false;
 let score = 0;
 
-let baseSpeed = 3.9;
-let speedMultiplier = 1;
+let baseSpeed = 3.2;
 let canBounce = true;
 
 // ✨ Effects
@@ -26,10 +25,10 @@ let squash = 1;
 let stretch = 1;
 let popups = [];
 
-// 📱 TRUE CANVAS SIZE FIX (IMPORTANT)
+// 📱 Canvas Resize (MOBILE FIXED)
 function resizeCanvas() {
   const width = canvas.clientWidth;
-  const height = window.innerHeight; // 🔥 use real screen height
+  const height = window.innerHeight;
 
   canvas.style.height = height + "px";
 
@@ -38,7 +37,6 @@ function resizeCanvas() {
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // ✅ Correct paddle position
   paddle.y = height - 60;
 }
 
@@ -82,7 +80,7 @@ upload.addEventListener("change", (e) => {
   reader.readAsDataURL(e.target.files[0]);
 });
 
-// ▶️ Start
+// ▶️ Start Game
 overlay.addEventListener("click", () => {
   audioCtx.resume();
   overlay.style.display = "none";
@@ -103,7 +101,6 @@ function startGame() {
   paddle.y = height - 60;
 
   score = 0;
-  speedMultiplier = 1;
   running = true;
 
   gameLoop();
@@ -181,6 +178,7 @@ function gameLoop() {
   ball.x += ball.vx;
   ball.y += ball.vy;
 
+  // smooth animation reset
   squash += (1 - squash) * 0.2;
   stretch += (1 - stretch) * 0.2;
 
@@ -195,7 +193,7 @@ function gameLoop() {
     playBounce();
   }
 
-  // paddle
+  // paddle collision (🔥 FIXED SPEED LOGIC)
   if (
     ball.y + ball.r >= paddle.y &&
     ball.y + ball.r <= paddle.y + paddle.h &&
@@ -203,16 +201,25 @@ function gameLoop() {
     ball.x <= paddle.x + paddle.w
   ) {
     if (canBounce) {
-      ball.vy = -Math.abs(ball.vy);
+      // 🔥 REAL SPEED INCREASE
+      let speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+      speed += 0.4;
 
+      let angle = Math.atan2(ball.vy, ball.vx);
+
+      ball.vx = Math.cos(angle) * speed;
+      ball.vy = -Math.abs(Math.sin(angle) * speed);
+
+      // paddle control
       let hit = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
-      ball.vx = hit * (baseSpeed + speedMultiplier);
+      ball.vx += hit * 2;
 
       score++;
       scoreText.innerText = score;
 
       playBounce();
 
+      // effects
       squash = 0.7;
       stretch = 1.3;
 
@@ -220,8 +227,6 @@ function gameLoop() {
         colors[Math.floor(Math.random() * colors.length)];
 
       popups.push({ x: ball.x, y: ball.y, alpha: 1 });
-
-      speedMultiplier += 0.08;
 
       canBounce = false;
       setTimeout(() => (canBounce = true), 100);
